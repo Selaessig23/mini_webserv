@@ -58,95 +58,95 @@ static int	ft_poll_loop(struct pollfd fds[10], int len)
 	client_t	*clients;
 
 	while (1)
-	{
-		pollret = 0;
-	pollret = poll(fds, len, -1);
-	if (pollret <= 0)
-	{
-		if (errno == EINTR)
-			ft_err_exit("A signal ocurred before any requested event\n");
-		else if (errno == ENOMEM)
-			ft_err_exit("Memory issue during poll loop\n");
-		ft_poll_loop(fds, len);
-	}
-	while (pollloop < len)
-	{
-		if (fds[pollloop].revents == POLLERR || fds[pollloop].revents == POLLHUP || fds[pollloop].revents == POLLNVAL)
 		{
-			if (pollloop == 0)
-				ft_err_exit("Error with socket during poll-loop\n");
-			//handle farewll message to all existing clients?
-			ft_remove_client(&fds, &clients, &len, pollloop);
+			pollret = 0;
+		pollret = poll(fds, len, -1);
+		if (pollret <= 0)
+		{
+			if (errno == EINTR)
+				ft_err_exit("A signal ocurred before any requested event\n");
+			else if (errno == ENOMEM)
+				ft_err_exit("Memory issue during poll loop\n");
 			ft_poll_loop(fds, len);
 		}
-		else if (pollloop == 0 && fds[0].revents & POLLIN)
+		while (pollloop < len)
 		{
-			//handle accept
-			struct pollfd	new_con;
-			new_con.fd = accept(fds[0].fd, NULL, NULL);
-			new_con.events = POLLIN;
-			new_con.revents = 0;
-			fds[len] = new_con;
-			client_t	new_client;
-			new_client.fd = new_con.fd;
-			new_client.id = len - 1;
-			memset(new_client.in, 0, sizeof(new_client.in));
-			memset(new_client.out, 0, sizeof(new_client.out));
-			clients[len - 1] = new_client;
-			len += 1;
-			//handle welcome message to all existing clients
-			ft_welcome(&fds, &clients, len);
-			ft_poll_loop(fds, len);
-		}
-		else if (pollloop != 0 && fds[pollloop].revents & POLLOUT)
-		{
-			//handle outputstream
-			int send_ret = 0;
+			if (fds[pollloop].revents == POLLERR || fds[pollloop].revents == POLLHUP || fds[pollloop].revents == POLLNVAL)
+			{
+				if (pollloop == 0)
+					ft_err_exit("Error with socket during poll-loop\n");
+				//handle farewll message to all existing clients?
+				ft_remove_client(&fds, &clients, &len, pollloop);
+				ft_poll_loop(fds, len);
+			}
+			else if (pollloop == 0 && fds[0].revents & POLLIN)
+			{
+				//handle accept
+				struct pollfd	new_con;
+				new_con.fd = accept(fds[0].fd, NULL, NULL);
+				new_con.events = POLLIN;
+				new_con.revents = 0;
+				fds[len] = new_con;
+				client_t	new_client;
+				new_client.fd = new_con.fd;
+				new_client.id = len - 1;
+				memset(new_client.in, 0, sizeof(new_client.in));
+				memset(new_client.out, 0, sizeof(new_client.out));
+				clients[len - 1] = new_client;
+				len += 1;
+				//handle welcome message to all existing clients
+				ft_welcome(&fds, &clients, len);
+				ft_poll_loop(fds, len);
+			}
+			else if (pollloop != 0 && fds[pollloop].revents & POLLOUT)
+			{
+				//handle outputstream
+				int send_ret = 0;
 
-			send_ret = send(fds[pollloop].fd, clients[pollloop - 1].out, sizeof(clients[pollloop - 1].out), 0);
-			if (send_ret < 0)
-			{
-				if (errno == ECONNRESET || errno == ENOTCONN || errno == EPIPE | errno == ETIMEDOUT)
+				send_ret = send(fds[pollloop].fd, clients[pollloop - 1].out, sizeof(clients[pollloop - 1].out), 0);
+				if (send_ret < 0)
+				{
+					if (errno == ECONNRESET || errno == ENOTCONN || errno == EPIPE | errno == ETIMEDOUT)
+						ft_remove_client(&fds, &clients, &len, pollloop);
+					ft_poll_loop(fds, len);
+				}
+				if (send_ret == 0)
+				{
 					ft_remove_client(&fds, &clients, &len, pollloop);
-				ft_poll_loop(fds, len);
+					ft_poll_loop(fds, len);
+				}
+				if (strlen(clients[pollloop - 1].out) == send_ret)
+				       fds[pollloop].events &= ~POLLOUT;	
+				char	new_out[1024];
+				memset(new_out, 0, sizeof(new_out));
+				strcpy(new_out,&clients[pollloop].out[send_ret]);
+				memset(clients[pollloop].out, 0, sizeof(clients[pollloop].out));
+				strcpy(clients[pollloop].out, new_out);
 			}
-			if (send_ret == 0)
+			else if (pollloop != 0 && fds[pollloop].revents & POLLIN)
 			{
-				ft_remove_client(&fds, &clients, &len, pollloop);
-				ft_poll_loop(fds, len);
-			}
-			if (strlen(clients[pollloop - 1].out) == send_ret)
-			       fds[pollloop].events &= ~POLLOUT;	
-			char	new_out[1024];
-			memset(new_out, 0, sizeof(new_out));
-			strcpy(new_out,&clients[pollloop].out[send_ret]);
-			memset(clients[pollloop].out, 0, sizeof(clients[pollloop].out));
-			strcpy(clients[pollloop].out, new_out);
-		}
-		else if (pollloop != 0 && fds[pollloop].revents & POLLIN)
-		{
-			//handle inputstream
-			char buf[1024];
-			int recv_ret = 0;
-			
-			recv_ret = recv(fds[pollloop].fd, &buf, (sizeof(buf) - 1), 0);
-			if (recv_ret < 0)
-			{
-				if (errno == ECONNRESET || errno == ENOTCONN)
+				//handle inputstream
+				char buf[1024];
+				int recv_ret = 0;
+				
+				recv_ret = recv(fds[pollloop].fd, &buf, (sizeof(buf) - 1), 0);
+				if (recv_ret < 0)
+				{
+					if (errno == ECONNRESET || errno == ENOTCONN)
+						ft_remove_client(&fds, &clients, &len, pollloop);
+					ft_poll_loop(fds, len);
+				}
+				if (recv_ret == 0)
+				{
 					ft_remove_client(&fds, &clients, &len, pollloop);
-				ft_poll_loop(fds, len);
+					ft_poll_loop(fds, len);
+				}
+				buf[recv_ret] = '\0';
+				strcpy(clients[len - 1].in, buf);
+				//input of client never gets executed
 			}
-			if (recv_ret == 0)
-			{
-				ft_remove_client(&fds, &clients, &len, pollloop);
-				ft_poll_loop(fds, len);
-			}
-			buf[recv_ret] = '\0';
-			strcpy(clients[len - 1].in, buf);
-			//input of client never gets executed
+			pollloop += 1;
 		}
-		pollloop += 1;
-	}
 	}
 	return (0);
 }
