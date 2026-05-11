@@ -11,18 +11,19 @@ void	ft_welcome(struct pollfd *fds, client_t *clients, int len)
 {
 	//struct pollfd	*fds = *fds_pointer;
 	//client_t	*clients = *clients_pointer;
-	int		i = 0;
+	int		i = 1;
 	char		info[1024];
 
 	sprintf(info, "A new member has entered the room, Id: %d\n", len - 1);
 	while (i < (len - 1)) // -1 since the newest client should not receive the message
 	{
-		strcat(clients[i].out, info); //check for size of clients[i].out before
+		strcat(clients[i - 1].out, info); //check for size of clients[i].out before
 		fds[i].events |= POLLOUT;
 		i += 1;
 	}
 	sprintf(info, "Welcome new member, you got the id: %d\n", len - 1);
-	strcpy(clients[i].out, info);
+	strcpy(clients[i - 1].out, info);
+	// strcat(clients[i].out, info); //check for size of clients[i].out before
 	fds[i].events |= POLLOUT;
 }
 
@@ -55,7 +56,7 @@ static int	ft_poll_loop(struct pollfd fds[10], int len)
 {
 	int		pollret = 0;
 	int		pollloop = 0;
-	client_t	*clients = NULL;
+	client_t	clients[10];
 
 	printf("Debug: poll loop starts here\n"); 
 	while (1)
@@ -71,7 +72,7 @@ static int	ft_poll_loop(struct pollfd fds[10], int len)
 				//ft_poll_loop(fds, len);
 				//ft_err_exit("A signal ocurred before any requested event\n");
 			else 
-				ft_err_exit("Issue during poll loop\n");
+				ft_err_exit("Issue during poll loop\n", fds[0].fd);
 		}
 		while (pollloop < len)
 		{
@@ -80,16 +81,16 @@ static int	ft_poll_loop(struct pollfd fds[10], int len)
 			{
 				printf("Debug: poll event error\n"); 
 				if (pollloop == 0)
-					ft_err_exit("Error with socket during poll-loop\n");
+					ft_err_exit("Error with socket during poll-loop\n", fds[0].fd);
 				//handle farewll message to all existing clients?
-				if (clients)
-					ft_remove_client(fds, clients, &len, pollloop);
+				//if (clients[pollloop - 1])
+				ft_remove_client(fds, clients, &len, pollloop);
 				break;
 			}
 			else if (pollloop == 0 && fds[0].revents & POLLIN)
 			{
 				//handle accept
-				printf("DEBUG: New incoming connection");
+				printf("DEBUG: New incoming connection\n");
 				struct pollfd	new_con;
 				new_con.fd = accept(fds[0].fd, NULL, NULL);
 				new_con.events = POLLIN;
@@ -124,7 +125,7 @@ static int	ft_poll_loop(struct pollfd fds[10], int len)
 					ft_remove_client(fds, clients, &len, pollloop);
 					break;
 				}
-				if ((int)strlen(clients[pollloop - 1].out) == send_ret)
+				if ((int)strlen(clients[pollloop - 1].out) <= send_ret)
 				       fds[pollloop].events &= ~POLLOUT;	
 				char	new_out[1024];
 				memset(new_out, 0, sizeof(new_out));
@@ -156,6 +157,7 @@ static int	ft_poll_loop(struct pollfd fds[10], int len)
 				//input of client never gets executed
 			}
 			pollloop += 1;
+			printf("test\n");
 		}
 	}
 	return (0);
@@ -203,7 +205,7 @@ int	init_server(int port)
 	if (socket_fd < 0)
 	{
 		printf("socket: %d\n", socket_fd);
-		ft_err_exit("Error. Problems with socket function.\n");
+		ft_err_exit("Error. Problems with socket function.\n", socket_fd);
 	}
 	//if (inet_pton(AF_INET, "172.0.0.1", &i_addr.s_addr) <= 0) //converts IP address into an integer
 	//	ft_err_exit("Error. Problems with network address of address family.\n");
@@ -214,10 +216,10 @@ int	init_server(int port)
 	if (bind(socket_fd, (struct sockaddr*)&my_addr, sizeof(my_addr)) < 0)
 	{
 		printf("errno: %s\n", strerror(errno));
-		ft_err_exit("Error. Problems with bind functions.\n");
+		ft_err_exit("Error. Problems with bind functions.\n", socket_fd);
 	}
 	if (listen(socket_fd, 10) < 0)
-		ft_err_exit("Error. Problems with listen function.\n");
+		ft_err_exit("Error. Problems with listen function.\n", socket_fd);
 	ft_prepare_polling(socket_fd);
 	//call poll-loop
 	return (0);

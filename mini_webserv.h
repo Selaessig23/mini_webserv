@@ -19,7 +19,7 @@ typedef struct client_s{
 
 //functions
 int	init_server(int port);
-void	ft_err_exit(char err_msg[]);
+void	ft_err_exit(char err_msg[], int socket_fd);
 
 
 #endif
