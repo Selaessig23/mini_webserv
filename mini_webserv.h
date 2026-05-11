@@ -7,12 +7,14 @@
 #include <sys/socket.h>
 #include <poll.h>
 #include <errno.h>
+#include <stdio.h>
 
 //types
 typedef struct client_s{
 	int	fd;
 	int	id;
-	char	*out;
+	char	in[1024];
+	char	out[1024];
 }	client_t;
 
 //functions
