@@ -5,7 +5,11 @@
 
 /**
  * @brief send automatic welcome message to all existing clients
- * if a new client connects
+ * as well as a welcome message to the new client if a new client connects
+ *
+ * @param fds a pointer to the poll struct array
+ * @param clients a pointer to the client struct array
+ * @param len the lenght of the pollstruct array, the new client is already considered
  */
 void	ft_welcome(struct pollfd *fds, client_t *clients, int len)
 {
@@ -22,9 +26,9 @@ void	ft_welcome(struct pollfd *fds, client_t *clients, int len)
 		i += 1;
 	}
 	sprintf(info, "Welcome new member, you got the id: %d\n", len - 1);
-	strcpy(clients[i - 1].out, info);
-	// strcat(clients[i].out, info); //check for size of clients[i].out before
-	fds[i].events |= POLLOUT;
+	strcpy(clients[len - 1].out, info);
+	// strcat(clients[i].out, inf); //check for size of clients[i].out before
+	fds[len - 1].events |= POLLOUT;
 }
 
 /**
@@ -58,6 +62,7 @@ static int	ft_poll_loop(struct pollfd fds[10], int len)
 	int		pollloop = 0;
 	client_t	clients[10];
 
+	memset(clients, 0, sizeof(memset));
 	printf("Debug: poll loop starts here\n"); 
 	while (1)
 	{
@@ -172,6 +177,7 @@ void ft_prepare_polling(int socket_fd)
 	struct pollfd	fds[10];
 	struct pollfd	socket_poll;
 
+	memset(&fds, 0, sizeof(fds));
 	socket_poll.fd = socket_fd;
 	socket_poll.events = POLLIN;
 	socket_poll.revents = 0;
