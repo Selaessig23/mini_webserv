@@ -1,4 +1,11 @@
-*.swo
-*.swp
+#vim swap  and vscode files
+*.sw?
 *.vscode
+
+#object-files
 obj
+*.o
+
+#executables
+miniserv
+a.out
