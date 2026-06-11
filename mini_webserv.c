@@ -87,13 +87,13 @@ static int ft_poll_loop(struct pollfd fds[10], int len, int client_id)
 	// client_t	new_client;
 
 	memset(clients, 0, sizeof(clients));
-	printf("Debug: poll loop starts here\n");
+	DEBUG_PRINT("Debug: poll loop starts here\n");
 	while (1)
 	{
 		pollret = 0;
 		pollloop = 0;
 		pollret = poll(fds, len, -1);
-		printf("Debug: poll event\n");
+		DEBUG_PRINT("Debug: poll event\n");
 		if (pollret < 0)
 		{
 			if (errno == EINTR)
@@ -108,7 +108,7 @@ static int ft_poll_loop(struct pollfd fds[10], int len, int client_id)
 			printf("Debug: poll event loop\n");
 			if (fds[pollloop].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
-				printf("Debug: poll event error\n");
+				DEBUG_PRINT("Debug: poll event error\n");
 				if (pollloop == 0)
 					ft_err_exit("Error with socket during poll-loop\n", fds[0].fd, fds);
 				// handle farewll message to all existing clients?
@@ -119,7 +119,7 @@ static int ft_poll_loop(struct pollfd fds[10], int len, int client_id)
 			else if (pollloop == 0 && fds[0].revents & POLLIN)
 			{
 				// handle accept
-				printf("DEBUG: New incoming connection\n");
+				DEBUG_PRINT("DEBUG: New incoming connection\n");
 				fds[len].fd = accept(fds[0].fd, NULL, NULL);
 				if (fds[len].fd < 0)
 					ft_err_exit("Error with accept during poll loop\n", fds[0].fd, fds); //maybe specify the number of the client
@@ -143,7 +143,7 @@ static int ft_poll_loop(struct pollfd fds[10], int len, int client_id)
 			}
 			else if (pollloop != 0 && fds[pollloop].revents & POLLOUT)
 			{
-				printf("Debug: poll event pollout\n");
+				DEBUG_PRINT("Debug: poll event pollout\n");
 				// handle outputstream
 				int send_ret = 0;
 				size_t message_len = strlen(clients[pollloop - 1].out);
@@ -173,7 +173,7 @@ static int ft_poll_loop(struct pollfd fds[10], int len, int client_id)
 			}
 			else if (pollloop != 0 && fds[pollloop].revents & POLLIN)
 			{
-				printf("Debug: poll event pollin\n");
+				DEBUG_PRINT("Debug: poll event pollin\n");
 				// handle inputstream
 				char buf[1024];
 				int recv_ret = 0;
@@ -195,7 +195,6 @@ static int ft_poll_loop(struct pollfd fds[10], int len, int client_id)
 				// input of client never gets executed
 			}
 			pollloop += 1;
-			printf("test\n");
 		}
 	}
 	return (0);
