@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 import select
 import socket
 import subprocess
 import sys
 import tempfile
 import time
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
@@ -18,13 +20,12 @@ DEFAULT_CLIENTS = 20
 DEFAULT_JOIN_TEMPLATE = "A new member has entered the room, Id: {id}\n"
 DEFAULT_WELCOME_TEMPLATE = "Welcome new member, you got the id: {id}\n"
 DEFAULT_LEAVE_TEMPLATE = "A member has left the room, Id: {id}\n"
-VALGRIND_ARGS = [
-    "valgrind",
-    "--leak-check=full",
-    "--show-leak-kinds=all",
-    "--track-origins=yes",
-    "--track-fds=yes",
-]
+VALGRIND_ARGS = shlex.split(
+    os.environ.get(
+        "VALGRIND_CMD",
+        "valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes",
+    )
+)
 
 
 class TestFailure(RuntimeError):

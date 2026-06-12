@@ -93,6 +93,19 @@ static void ft_remove_client(struct pollfd *fds, client_t *clients, int *len, in
 	ft_send_msg(info, fds, clients, *len);
 }
 
+static void ft_close_poll_fds(struct pollfd *fds, int len)
+{
+	int i;
+
+	i = 0;
+	while (i < len)
+	{
+		if (fds[i].fd >= 0)
+			close(fds[i].fd);
+		i += 1;
+	}
+}
+
 /**
  * @brief this function runs the main poll loop,
  * it checks for events of the socket
@@ -115,14 +128,22 @@ static int ft_poll_loop(struct pollfd fds[MAX_CLIENTS + 1], int len, int client_
 	DEBUG_PRINT("Debug: poll loop starts here\n");
 	while (1)
 	{
+		if (g_signalnum)
+			break;
 		pollret = 0;
 		pollloop = 0;
 		pollret = poll(fds, len, -1);
+		if (g_signalnum)
+			break;
 		DEBUG_PRINT("Debug: poll event\n");
 		if (pollret < 0)
 		{
 			if (errno == EINTR)
+			{
+				if (g_signalnum)
+					break;
 				continue;
+			}
 			// ft_poll_loop(fds, len);
 			// ft_err_exit("A signal ocurred before any requested event\n");
 			else
@@ -145,7 +166,7 @@ static int ft_poll_loop(struct pollfd fds[MAX_CLIENTS + 1], int len, int client_
 			{
 				// handle accept
 				DEBUG_PRINT("DEBUG: New incoming connection\n");
-				if (len > MAX_CLIENTS + 1)
+				if (len > MAX_CLIENTS + 2)
 				{
 					int rejected_fd = accept(fds[0].fd, NULL, NULL);
 
@@ -232,6 +253,7 @@ static int ft_poll_loop(struct pollfd fds[MAX_CLIENTS + 1], int len, int client_
 			pollloop += 1;
 		}
 	}
+	ft_close_poll_fds(fds, len);
 	return (0);
 }
 
@@ -268,7 +290,7 @@ void ft_prepare_run_polling(int socket_fd)
  */
 int init_server(int port)
 {
-	int socket_fd = 0;
+	int socket_fd = -1;
 	// assign a sockaddr variable for bind()
 	struct sockaddr_in my_addr;
 	// struct in_addr		i_addr;

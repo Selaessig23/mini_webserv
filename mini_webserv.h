@@ -8,6 +8,7 @@
 #include <poll.h>
 #include <errno.h>
 #include <stdio.h>
+#include <signal.h>
 
 #define MAX_CLIENTS 10
 
@@ -26,6 +27,9 @@
 	} while (0)
 #endif
 
+// Define a global variable for signal-handling
+extern volatile sig_atomic_t g_signalnum;
+
 // types
 typedef struct client_s
 {
@@ -38,5 +42,6 @@ typedef struct client_s
 // functions
 int init_server(int port);
 void ft_err_exit(char err_msg[], int socket_fd, struct pollfd *fds);
+void signal_handler(int sig);
 
 #endif

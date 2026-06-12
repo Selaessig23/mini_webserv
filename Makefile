@@ -55,6 +55,6 @@ debugrun: debug
 	@PATH=".$${PATH:+:$${PATH}}" && $(VALGRIND) $(NAME) $(ARGS)
 
 test: debug
-	python3 test_mini_webserv.py --binary ./$(NAME) --port 19090 --clients 20 --valgrind
+	VALGRIND_CMD='$(VALGRIND)' python3 test_mini_webserv.py --binary ./$(NAME) --port 19090 --clients 20 --valgrind
 
 .PHONY: all run debug debugrun test clean fclean re
