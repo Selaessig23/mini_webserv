@@ -19,7 +19,7 @@ DEFAULT_PORT = 19090
 DEFAULT_CLIENTS = 20
 DEFAULT_JOIN_TEMPLATE = "A new member has entered the room, Id: {id}\n"
 DEFAULT_WELCOME_TEMPLATE = "Welcome new member, you got the id: {id}\n"
-DEFAULT_LEAVE_TEMPLATE = "A member has left the room, Id: {id}\n"
+DEFAULT_LEAVE_TEMPLATE = "Member with id {id} has left the room.\n"
 VALGRIND_ARGS = shlex.split(
     os.environ.get(
         "VALGRIND_CMD",
@@ -56,8 +56,10 @@ class Reporter:
     def summary(self) -> int:
         passed = sum(1 for result in self.results if result.passed)
         failed = len(self.results) - passed
+        total = len(self.results)
 
         print("\nSummary")
+        print(f"  Total: {total}")
         print(f"  Passed: {passed}")
         print(f"  Failed: {failed}")
         return 0 if failed == 0 else 1

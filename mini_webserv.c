@@ -5,20 +5,25 @@
 
 /**
  * @brief function to send a message to clients within index range from 0 to len
+ * excluding the client with the index excluded_pollfd_index, which is the client that sent the message to be broadcasted
  *
  * @param msg the message to send
  * @param fds a pointer to the poll struct array
  * @param clients a pointer to the client struct array
  * @param len defines outer range of the index
+ * @param excluded_pollfd_index the index of the client to exclude from receiving the message
  */
-void ft_send_msg(char *msg, struct pollfd *fds, client_t *clients, int len)
+static void ft_send_msg_except(char *msg, struct pollfd *fds, client_t *clients, int len, int excluded_pollfd_index)
 {
 	int i = 1;
 
 	while (i < (len))
 	{
-		strcat(clients[i - 1].out, msg); // check for size of clients[i].out before
-		fds[i].events |= POLLOUT;
+		if (i != excluded_pollfd_index)
+		{
+			strcat(clients[i - 1].out, msg); // check for size of clients[i].out before
+			fds[i].events |= POLLOUT;
+		}
 		i += 1;
 	}
 }
@@ -42,7 +47,7 @@ void ft_welcome(struct pollfd *fds, client_t *clients, int len, int client_id)
 	memset(info, 0, sizeof(info));
 	if (sprintf(info, "A new member has entered the room, Id: %d\n", client_id) < 0)
 		ft_err_exit("Error with sprintf", fds[0].fd, fds);
-	ft_send_msg(info, fds, clients, len);
+	ft_send_msg_except(info, fds, clients, len, len);
 	// while (i < (len)) // -1 since the newest client should not receive the message
 	//{
 	//	strcat(clients[i - 1].out, info); // check for size of clients[i].out before
@@ -90,7 +95,7 @@ static void ft_remove_client(struct pollfd *fds, client_t *clients, int *len, in
 		memset(&clients[*len - 2], 0, sizeof(clients[*len - 2]));
 	}
 	*len -= 1;
-	ft_send_msg(info, fds, clients, *len);
+	ft_send_msg_except(info, fds, clients, *len, -1);
 }
 
 /**
@@ -235,7 +240,7 @@ static int ft_poll_loop(struct pollfd fds[MAX_CLIENTS + 1], int len, int client_
 				}
 				buf[recv_ret] = '\0';
 				// strcpy(clients[pollloop - 1].in, buf);
-				ft_send_msg(buf, fds, clients, len - 1);
+				ft_send_msg_except(buf, fds, clients, len, pollloop);
 			}
 			pollloop += 1;
 		}
