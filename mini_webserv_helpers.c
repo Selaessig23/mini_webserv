@@ -6,17 +6,19 @@
  * (2) it closes the fds of all connected clients
  * (3) it closes the socket fd of the server itself
  */
-void	ft_err_exit(char err_msg[], int socket_fd, struct pollfd *fds)
+void ft_err_exit(char err_msg[], int socket_fd, struct pollfd *fds)
 {
-	write (2, err_msg, strlen(err_msg));
-	while (!fds->fd)
+	write(2, err_msg, strlen(err_msg));
+	if (fds)
 	{
-		close(fds->fd);
-		fds += 1;
+		while (fds->fd)
+		{
+			close(fds->fd);
+			fds += 1;
+		}
 	}
-		
 
 	if (socket_fd)
 		close(socket_fd);
-	exit (1);
+	exit(1);
 }

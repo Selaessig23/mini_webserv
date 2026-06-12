@@ -9,6 +9,8 @@
 #include <errno.h>
 #include <stdio.h>
 
+#define MAX_CLIENTS 10
+
 // Define the debug print mode as a C preprocessor macro.
 // If DEBUG is defined, the DEBUG_PRINT macro will print the provided message (variadic macro). Otherwise, it will do nothing.
 #ifdef DEBUG

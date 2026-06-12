@@ -11,18 +11,17 @@
  * @param clients a pointer to the client struct array
  * @param len defines outer range of the index
  */
-void	ft_send_msg(char *msg, struct pollfd *fds, client_t *clients, int len)
+void ft_send_msg(char *msg, struct pollfd *fds, client_t *clients, int len)
 {
-	int	i = 1;	
-	
-	while (i < (len)) 
+	int i = 1;
+
+	while (i < (len))
 	{
 		strcat(clients[i - 1].out, msg); // check for size of clients[i].out before
 		fds[i].events |= POLLOUT;
 		i += 1;
 	}
 }
-
 
 /**
  * @brief sends a message to all existing clients that informs about the new client
@@ -36,21 +35,20 @@ void ft_welcome(struct pollfd *fds, client_t *clients, int len, int client_id)
 {
 	// struct pollfd	*fds = *fds_pointer;
 	// client_t	*clients = *clients_pointer;
-	int i = 1;
 	char info[1024];
 	int new_client_index = len - 1;
 
-	//bzero(info, sizeof(info));
+	// bzero(info, sizeof(info));
 	memset(info, 0, sizeof(info));
 	if (sprintf(info, "A new member has entered the room, Id: %d\n", client_id) < 0)
 		ft_err_exit("Error with sprintf", fds[0].fd, fds);
 	ft_send_msg(info, fds, clients, len);
-	//while (i < (len)) // -1 since the newest client should not receive the message
+	// while (i < (len)) // -1 since the newest client should not receive the message
 	//{
 	//	strcat(clients[i - 1].out, info); // check for size of clients[i].out before
 	//	fds[i].events |= POLLOUT;
 	//	i += 1;
-	//}
+	// }
 	memset(info, 0, sizeof(info));
 	if (sprintf(info, "Welcome new member, you got the id: %d\n", client_id) < 0)
 		ft_err_exit("Error with sprintf", fds[0].fd, fds);
@@ -77,9 +75,9 @@ static void ft_remove_client(struct pollfd *fds, client_t *clients, int *len, in
 {
 	char info[1024];
 
-	if (pollfd_index <= 0 || pollfd_index < *len)
-		return ;
-	if (sprintf(info, "Member with id %d has left the room.\n", clients[pollfd_index -1].id) < 0)
+	if (pollfd_index <= 0 || pollfd_index >= *len)
+		return;
+	if (sprintf(info, "Member with id %d has left the room.\n", clients[pollfd_index - 1].id) < 0)
 		ft_err_exit("Error with sprintf", fds[0].fd, fds);
 	close(fds[pollfd_index].fd);
 	if (*len > 1)
@@ -97,7 +95,7 @@ static void ft_remove_client(struct pollfd *fds, client_t *clients, int *len, in
 
 /**
  * @brief this function runs the main poll loop,
- * it checks for events of the socket 
+ * it checks for events of the socket
  * (fds[0]0) and the connected clients(fds[i] with i != 0)
  *
  * it manages the struct pollfd as well as the struct client_t (= client array)
@@ -105,11 +103,11 @@ static void ft_remove_client(struct pollfd *fds, client_t *clients, int *len, in
  * @param fds array of pollfd struct, requied for poll-fct
  * @param len length of the pollfd struct array
  */
-static int ft_poll_loop(struct pollfd fds[10], int len, int client_id)
+static int ft_poll_loop(struct pollfd fds[MAX_CLIENTS + 1], int len, int client_id)
 {
 	int pollret = 0;
 	int pollloop = 0;
-	client_t clients[10];
+	client_t clients[MAX_CLIENTS];
 	// struct pollfd	new_con;
 	// client_t	new_client;
 
@@ -147,9 +145,19 @@ static int ft_poll_loop(struct pollfd fds[10], int len, int client_id)
 			{
 				// handle accept
 				DEBUG_PRINT("DEBUG: New incoming connection\n");
+				if (len >= MAX_CLIENTS + 1)
+				{
+					int rejected_fd = accept(fds[0].fd, NULL, NULL);
+
+					if (rejected_fd < 0)
+						ft_err_exit("Error with accept during poll loop\n", fds[0].fd, fds);
+					write(2, "Error: maximum number of clients reached\n", 42);
+					close(rejected_fd);
+					break;
+				}
 				fds[len].fd = accept(fds[0].fd, NULL, NULL);
 				if (fds[len].fd < 0)
-					ft_err_exit("Error with accept during poll loop\n", fds[0].fd, fds); //maybe specify the number of the client
+					ft_err_exit("Error with accept during poll loop\n", fds[0].fd, fds); // maybe specify the number of the client
 				fds[len].events = POLLIN;
 				fds[len].revents = 0;
 				// fds[len] = new_con;
@@ -234,10 +242,10 @@ static int ft_poll_loop(struct pollfd fds[10], int len, int client_id)
  */
 void ft_prepare_run_polling(int socket_fd)
 {
-	struct pollfd fds[10];
+	struct pollfd fds[MAX_CLIENTS + 1];
 	struct pollfd socket_poll;
 
-	//bzero(fds, sizeof(fds));
+	// bzero(fds, sizeof(fds));
 	memset(&fds, 0, sizeof(fds));
 	socket_poll.fd = socket_fd;
 	socket_poll.events = POLLIN;
@@ -267,7 +275,7 @@ int init_server(int port)
 	// int			var;
 	// socklen_t	addrlen = 0;
 
-	//bzero(addr, sizeof(my_addr));
+	// bzero(addr, sizeof(my_addr));
 	memset(&my_addr, 0, sizeof(my_addr));
 	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (socket_fd < 0)
@@ -286,7 +294,7 @@ int init_server(int port)
 		printf("errno: %s\n", strerror(errno));
 		ft_err_exit("Error. Problems with bind functions.\n", socket_fd, NULL);
 	}
-	if (listen(socket_fd, 10) < 0)
+	if (listen(socket_fd, MAX_CLIENTS) < 0)
 		ft_err_exit("Error. Problems with listen function.\n", socket_fd, NULL);
 	ft_prepare_run_polling(socket_fd);
 	return (0);
