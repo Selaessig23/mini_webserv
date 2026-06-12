@@ -9,3 +9,7 @@ obj
 #executables
 miniserv
 a.out
+
+#python cache
+__pycache__/
+*.pyc
