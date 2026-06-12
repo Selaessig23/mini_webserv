@@ -41,14 +41,19 @@ fclean: clean
 
 re: fclean all
 
-run: all
+run: fclean all
 	@echo
 	@PATH=".$${PATH:+:$${PATH}}" && $(NAME) $(ARGS)
 
 debug: CFLAGS += -DDEBUG -g
-debug: fclean run 
+debug: fclean all
 	@echo "$(BOLD)$(YELLOW)Debug build complete.$(RESET)"
+
+debugrun: debug
 	@echo
 	@PATH=".$${PATH:+:$${PATH}}" && valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes $(NAME) $(ARGS)
 
-.PHONY: all run debug clean fclean re
+test: debug
+	python3 test_mini_webserv.py --binary ./$(NAME) --port 19090 --clients 20
+
+.PHONY: all run debug debugrun test clean fclean re
