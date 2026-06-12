@@ -145,13 +145,13 @@ static int ft_poll_loop(struct pollfd fds[MAX_CLIENTS + 1], int len, int client_
 			{
 				// handle accept
 				DEBUG_PRINT("DEBUG: New incoming connection\n");
-				if (len >= MAX_CLIENTS + 1)
+				if (len > MAX_CLIENTS + 1)
 				{
 					int rejected_fd = accept(fds[0].fd, NULL, NULL);
 
 					if (rejected_fd < 0)
 						ft_err_exit("Error with accept during poll loop\n", fds[0].fd, fds);
-					write(2, "Error: maximum number of clients reached\n", 42);
+					write(2, "Error: maximum number of clients reached\n", 41);
 					close(rejected_fd);
 					break;
 				}

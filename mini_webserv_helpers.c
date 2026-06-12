@@ -18,7 +18,7 @@ void ft_err_exit(char err_msg[], int socket_fd, struct pollfd *fds)
 		}
 	}
 
-	if (socket_fd)
+	if (socket_fd >= 0)
 		close(socket_fd);
 	exit(1);
 }
