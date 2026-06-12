@@ -15,7 +15,7 @@ void signal_handler(int sig)
 	g_signalnum = sig;
 }
 
-static void ft_close_poll_fds(struct pollfd *fds, int len)
+void ft_close_poll_fds(struct pollfd *fds, int len)
 {
 	int i;
 

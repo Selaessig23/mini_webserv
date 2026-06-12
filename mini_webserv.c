@@ -93,19 +93,6 @@ static void ft_remove_client(struct pollfd *fds, client_t *clients, int *len, in
 	ft_send_msg(info, fds, clients, *len);
 }
 
-static void ft_close_poll_fds(struct pollfd *fds, int len)
-{
-	int i;
-
-	i = 0;
-	while (i < len)
-	{
-		if (fds[i].fd >= 0)
-			close(fds[i].fd);
-		i += 1;
-	}
-}
-
 /**
  * @brief this function runs the main poll loop,
  * it checks for events of the socket
@@ -166,7 +153,7 @@ static int ft_poll_loop(struct pollfd fds[MAX_CLIENTS + 1], int len, int client_
 			{
 				// handle accept
 				DEBUG_PRINT("DEBUG: New incoming connection\n");
-				if (len > MAX_CLIENTS + 2)
+				if (len >= MAX_CLIENTS + 1)
 				{
 					int rejected_fd = accept(fds[0].fd, NULL, NULL);
 
