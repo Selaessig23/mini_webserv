@@ -44,12 +44,13 @@ void ft_welcome(struct pollfd *fds, client_t *clients, int len, int client_id)
 	memset(info, 0, sizeof(info));
 	if (sprintf(info, "A new member has entered the room, Id: %d\n", client_id) < 0)
 		ft_err_exit("Error with sprintf", fds[0].fd, fds);
-	while (i < (len)) // -1 since the newest client should not receive the message
-	{
-		strcat(clients[i - 1].out, info); // check for size of clients[i].out before
-		fds[i].events |= POLLOUT;
-		i += 1;
-	}
+	ft_send_msg(info, fds, clients, len);
+	//while (i < (len)) // -1 since the newest client should not receive the message
+	//{
+	//	strcat(clients[i - 1].out, info); // check for size of clients[i].out before
+	//	fds[i].events |= POLLOUT;
+	//	i += 1;
+	//}
 	memset(info, 0, sizeof(info));
 	if (sprintf(info, "Welcome new member, you got the id: %d\n", client_id) < 0)
 		ft_err_exit("Error with sprintf", fds[0].fd, fds);
@@ -74,8 +75,12 @@ void ft_welcome(struct pollfd *fds, client_t *clients, int len, int client_id)
  */
 static void ft_remove_client(struct pollfd *fds, client_t *clients, int *len, int pollfd_index)
 {
+	char info[1024];
+
 	if (pollfd_index <= 0 || pollfd_index < *len)
 		return ;
+	if (sprintf(info, "Member with id %d has left the room.\n", clients[pollfd_index -1].id) < 0)
+		ft_err_exit("Error with sprintf", fds[0].fd, fds);
 	close(fds[pollfd_index].fd);
 	if (*len > 1)
 	{
@@ -87,6 +92,7 @@ static void ft_remove_client(struct pollfd *fds, client_t *clients, int *len, in
 		memset(&clients[*len - 2], 0, sizeof(clients[*len - 2]));
 	}
 	*len -= 1;
+	ft_send_msg(info, fds, clients, *len);
 }
 
 /**
@@ -213,7 +219,7 @@ static int ft_poll_loop(struct pollfd fds[10], int len, int client_id)
 				}
 				buf[recv_ret] = '\0';
 				// strcpy(clients[pollloop - 1].in, buf);
-				ft_send_msg(buf, fds, clients, len);
+				ft_send_msg(buf, fds, clients, len - 1);
 			}
 			pollloop += 1;
 		}
