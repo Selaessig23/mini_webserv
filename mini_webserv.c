@@ -4,6 +4,27 @@
 #include <arpa/inet.h>
 
 /**
+ * @brief function to send a message to clients within index range from 0 to len
+ *
+ * @param msg the message to send
+ * @param fds a pointer to the poll struct array
+ * @param clients a pointer to the client struct array
+ * @param len defines outer range of the index
+ */
+void	ft_send_msg(char *msg, struct pollfd *fds, client_t *clients, int len)
+{
+	int	i = 1;	
+	
+	while (i < (len)) 
+	{
+		strcat(clients[i - 1].out, msg); // check for size of clients[i].out before
+		fds[i].events |= POLLOUT;
+		i += 1;
+	}
+}
+
+
+/**
  * @brief sends a message to all existing clients that informs about the new client
  * and a welcome message to the new client
  *
@@ -191,8 +212,8 @@ static int ft_poll_loop(struct pollfd fds[10], int len, int client_id)
 					break;
 				}
 				buf[recv_ret] = '\0';
-				strcpy(clients[pollloop - 1].in, buf);
-				// input of client never gets executed
+				// strcpy(clients[pollloop - 1].in, buf);
+				ft_send_msg(buf, fds, clients, len);
 			}
 			pollloop += 1;
 		}
