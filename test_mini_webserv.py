@@ -115,7 +115,14 @@ class ServerHandle:
                 self.process.wait(timeout=1.0)
         if self.log_file is not None:
             self.log_file.close()
+
+    def cleanup(self) -> None:
         self.temp_dir.cleanup()
+
+    def full_log(self) -> str:
+        if not self.log_path.exists():
+            return "No server log was captured."
+        return self.log_path.read_text(encoding="utf-8", errors="replace")
 
 
 class Client:
@@ -412,8 +419,6 @@ def main() -> int:
             server.start()
         except TestFailure as exc:
             reporter.fail_check("server starts", str(exc))
-            print()
-            print(server.tail_log())
             return reporter.summary()
         reporter.pass_check(
             "server starts",
@@ -423,11 +428,13 @@ def main() -> int:
         check_broadcast(clients, args, reporter)
         check_disconnect_and_reconnect(clients, args, server, reporter)
     except TestFailure:
-        print()
-        print(server.tail_log())
+        pass
     finally:
         close_clients(clients)
         server.stop()
+        print()
+        print(server.full_log())
+        server.cleanup()
 
     return reporter.summary()
 
