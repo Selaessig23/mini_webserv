@@ -2,6 +2,7 @@
 NAME = miniserv
 CC = cc
 CFLAGS = -Wall -Werror -Wextra 
+VALGRIND = valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes
 
 #arguments to test:
 ARGS = "8080"
@@ -51,9 +52,9 @@ debug: fclean all
 
 debugrun: debug
 	@echo
-	@PATH=".$${PATH:+:$${PATH}}" && valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes $(NAME) $(ARGS)
+	@PATH=".$${PATH:+:$${PATH}}" && $(VALGRIND) $(NAME) $(ARGS)
 
 test: debug
-	python3 test_mini_webserv.py --binary ./$(NAME) --port 19090 --clients 20
+	python3 test_mini_webserv.py --binary ./$(NAME) --port 19090 --clients 20 --valgrind
 
 .PHONY: all run debug debugrun test clean fclean re

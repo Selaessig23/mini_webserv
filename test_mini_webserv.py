@@ -18,6 +18,13 @@ DEFAULT_CLIENTS = 20
 DEFAULT_JOIN_TEMPLATE = "A new member has entered the room, Id: {id}\n"
 DEFAULT_WELCOME_TEMPLATE = "Welcome new member, you got the id: {id}\n"
 DEFAULT_LEAVE_TEMPLATE = "A member has left the room, Id: {id}\n"
+VALGRIND_ARGS = [
+    "valgrind",
+    "--leak-check=full",
+    "--show-leak-kinds=all",
+    "--track-origins=yes",
+    "--track-fds=yes",
+]
 
 
 class TestFailure(RuntimeError):
@@ -56,18 +63,22 @@ class Reporter:
 
 
 class ServerHandle:
-    def __init__(self, binary: Path, port: int) -> None:
+    def __init__(self, binary: Path, port: int, use_valgrind: bool) -> None:
         self.binary = binary
         self.port = port
+        self.use_valgrind = use_valgrind
         self.temp_dir = tempfile.TemporaryDirectory(prefix="mini_webserv_test_")
         self.log_path = Path(self.temp_dir.name) / "server.log"
         self.log_file = None
         self.process = None
 
     def start(self) -> None:
+        command = [str(self.binary), str(self.port)]
+        if self.use_valgrind:
+            command = VALGRIND_ARGS + command
         self.log_file = self.log_path.open("w+", encoding="utf-8")
         self.process = subprocess.Popen(
-            [str(self.binary), str(self.port)],
+            command,
             stdout=self.log_file,
             stderr=subprocess.STDOUT,
             cwd=str(self.binary.parent),
@@ -221,6 +232,11 @@ def parse_args() -> argparse.Namespace:
         "--leave-template",
         default=DEFAULT_LEAVE_TEMPLATE,
         help="Leave message template. Use {id} for the client id.",
+    )
+    parser.add_argument(
+        "--valgrind",
+        action="store_true",
+        help="Run the server process under valgrind.",
     )
     return parser.parse_args()
 
@@ -387,7 +403,7 @@ def main() -> int:
         print(f"Server binary not found: {binary}", file=sys.stderr)
         return 1
 
-    server = ServerHandle(binary, args.port)
+    server = ServerHandle(binary, args.port, args.valgrind)
     clients: List[Client] = []
 
     try:
