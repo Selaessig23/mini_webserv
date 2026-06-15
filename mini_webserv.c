@@ -104,7 +104,7 @@ static void ft_remove_client(struct pollfd *fds, client_t *clients, int *len, in
  * (fds[0]0) and the connected clients(fds[i] with i != 0)
  *
  * it manages the struct pollfd as well as the struct client_t (= client array)
- * 
+ *
  * inputbuffer of struct client_t has not been considered
  *
  * @param fds array of pollfd struct, requied for poll-fct
@@ -117,7 +117,8 @@ static int ft_poll_loop(struct pollfd fds[MAX_CLIENTS + 1], int len, int client_
 	client_t clients[MAX_CLIENTS];
 
 	// bzero(clients, sizeof(clients));
-	memset(clients, 0, sizeof(clients)); DEBUG_PRINT("Debug: poll loop starts here\n");
+	memset(clients, 0, sizeof(clients));
+	DEBUG_PRINT("Debug: poll loop starts here\n");
 	while (1)
 	{
 		if (g_signalnum)
@@ -144,7 +145,7 @@ static int ft_poll_loop(struct pollfd fds[MAX_CLIENTS + 1], int len, int client_
 			printf("Debug: poll event loop\n");
 			if (fds[pollloop].revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
-				//handle error
+				// handle error
 				DEBUG_PRINT("Debug: poll event error\n");
 				if (pollloop == 0)
 					ft_err_exit("Error with socket during poll-loop\n", fds[0].fd, fds);
@@ -185,10 +186,16 @@ static int ft_poll_loop(struct pollfd fds[MAX_CLIENTS + 1], int len, int client_
 			{
 				DEBUG_PRINT("Debug: poll event pollout\n");
 				// handle outputstream
+				char msg_to_send[4096];
 				int send_ret = 0;
-				size_t message_len = strlen(clients[pollloop - 1].out);
+				if (!(ft_extract_message(clients[pollloop - 1].out, msg_to_send)))
+				{
+					fds[pollloop].events &= ~POLLOUT;
+					break;
+				}
+				size_t message_len = strlen(msg_to_send);
 
-				send_ret = send(fds[pollloop].fd, clients[pollloop - 1].out, message_len, 0);
+				send_ret = send(fds[pollloop].fd, msg_to_send, message_len, 0);
 				if (send_ret < 0)
 				{
 					if (errno == ECONNRESET || errno == ENOTCONN || errno == EPIPE || errno == ETIMEDOUT)
@@ -200,17 +207,20 @@ static int ft_poll_loop(struct pollfd fds[MAX_CLIENTS + 1], int len, int client_
 					ft_remove_client(fds, clients, &len, pollloop);
 					break;
 				}
+				// Shift buf by the amount we actually sent
 				ft_memmove(clients[pollloop - 1].out,
-						clients[pollloop - 1].out + send_ret,
-						message_len - send_ret + 1);
-				if (strlen(clients[pollloop - 1].out) == 0)
+						   clients[pollloop - 1].out + send_ret,
+						   strlen(clients[pollloop - 1].out) - send_ret + 1);
+				// bzero(msg_to_send, sizeof(msg_to_send));
+				memset(msg_to_send, 0, sizeof(msg_to_send));
+				if (!strlen(clients[pollloop - 1].out))
 					fds[pollloop].events &= ~POLLOUT;
 			}
 			else if (pollloop != 0 && fds[pollloop].revents & POLLIN)
 			{
 				DEBUG_PRINT("Debug: poll event pollin\n");
 				// handle inputstream
-				char buf[1024];
+				char buf[4096];
 				int recv_ret = 0;
 
 				recv_ret = recv(fds[pollloop].fd, &buf, (sizeof(buf) - 1), 0);

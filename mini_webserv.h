@@ -35,8 +35,8 @@ typedef struct client_s
 {
 	int fd;
 	int id;
-	char in[1024];
-	char out[1024];
+	char in[4096];
+	char out[4096];
 } client_t;
 
 // functions
@@ -45,5 +45,6 @@ void ft_err_exit(char err_msg[], int socket_fd, struct pollfd *fds);
 void ft_close_poll_fds(struct pollfd *fds, int len);
 void signal_handler(int sig);
 void *ft_memmove(void *dst, const void *src, size_t n);
+int ft_extract_message(char *buf, char *msg);
 
 #endif

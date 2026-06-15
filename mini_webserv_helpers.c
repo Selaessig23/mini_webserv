@@ -17,7 +17,7 @@ void signal_handler(int sig)
 
 /**
  * @brief fuction that tries to imitate the memmove function
- * it copies n bytes from memory area src to memory area dest, mem area may 
+ * it copies n bytes from memory area src to memory area dest, mem area may
  * overlap
  *
  * in contrast to the libc-like version, it is protected against wrong NULL-pointers
@@ -27,8 +27,8 @@ void signal_handler(int sig)
  */
 void *ft_memmove(void *dst, const void *src, size_t n)
 {
-	char		*dst_cpy;
-	const char	*src_cpy;
+	char *dst_cpy;
+	const char *src_cpy;
 
 	if (n == 0)
 		return (dst);
@@ -74,4 +74,76 @@ void ft_err_exit(char err_msg[], int socket_fd, struct pollfd *fds)
 	if (socket_fd >= 0)
 		close(socket_fd);
 	exit(1);
+}
+
+/**
+ * @brief extracts one complete line/message from a buffered stream.
+ *
+ * This helper splits @buf at the first '\n', returns the extracted part in
+ * @msg, and keeps the remaining bytes in @buf. In mini_irc_webserv, this is
+ * useful for handling TCP input incrementally, where a client message may
+ * arrive in fragments or several commands may arrive in a single read.
+ * The function lets the server process one IRC-style line at a time while
+ * preserving any unfinished data for the next poll/read cycle.
+ *
+ * @param buf pointer to the buffer containing the incoming data stream. This buffer is modified in-place to remove the extracted message.
+ * @param msg pointer to a char pointer where the extracted message will be stored. The caller is responsible for freeing this memory after use.
+ * @return 1 if a complete message was successfully extracted, 0 if no complete message was found (i.e., no '\n' in the
+ */
+int extract_message(char **buf, char **msg)
+{
+	char *newbuf;
+	int i;
+
+	*msg = 0;
+	if (!*buf)
+		return (0);
+	i = 0;
+	while ((*buf)[i])
+	{
+		if ((*buf)[i] == '\n')
+		{
+			newbuf = calloc(1, sizeof(*newbuf) * (strlen(*buf + i + 1) + 1));
+			if (!newbuf)
+				return (-1);
+			strcpy(newbuf, *buf + i + 1);
+			*msg = *buf;
+			(*msg)[i + 1] = 0;
+			*buf = newbuf;
+			return (1);
+		}
+		i += 1;
+	}
+	return (0);
+}
+
+/**
+ * @brief extracts one complete line/message from a buffered stream.
+ *
+ * This helper splits @buf at the first '\n', returns the extracted part in
+ * @msg, and keeps the remaining bytes in @buf. In mini_irc_webserv, this is
+ * useful for handling TCP input incrementally, where a client message may
+ * arrive in fragments or several commands may arrive in a single read.
+ * The function lets the server process one IRC-style line at a time while
+ * preserving any unfinished data for the next poll/read cycle.
+ */
+int ft_extract_message(char *buf, char *msg)
+{
+	int i;
+
+	*msg = 0;
+	if (!*buf)
+		return (0);
+	i = 0;
+	while (buf[i])
+	{
+		if (buf[i] == '\n')
+		{
+			ft_memmove(msg, buf, i + 1);
+			msg[i + 1] = 0;
+			return (1);
+		}
+		i += 1;
+	}
+	return (0);
 }
