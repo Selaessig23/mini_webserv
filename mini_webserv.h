@@ -44,5 +44,6 @@ int init_server(int port);
 void ft_err_exit(char err_msg[], int socket_fd, struct pollfd *fds);
 void ft_close_poll_fds(struct pollfd *fds, int len);
 void signal_handler(int sig);
+void *ft_memmove(void *dst, const void *src, size_t n);
 
 #endif

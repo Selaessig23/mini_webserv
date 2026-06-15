@@ -15,6 +15,38 @@ void signal_handler(int sig)
 	g_signalnum = sig;
 }
 
+/**
+ * @brief fuction that tries to imitate the memmove function
+ * it copies n bytes from memory area src to memory area dest, mem area may 
+ * overlap
+ *
+ * in contrast to the libc-like version, it is protected against wrong NULL-pointers
+ * for dest and src
+ *
+ * @return a pointer to dest
+ */
+void *ft_memmove(void *dst, const void *src, size_t n)
+{
+	char		*dst_cpy;
+	const char	*src_cpy;
+
+	if (n == 0)
+		return (dst);
+	if (!dst_cpy || !src_cpy)
+		return (NULL);
+	dst_cpy = dst;
+	src_cpy = src;
+	while (n > 0)
+	{
+		dst_cpy[n - 1] = src_cpy[n - 1];
+		n -= 1;
+	}
+	return (dst);
+}
+
+/**
+ * @brief helper function to close all fds in the pollfd array
+ */
 void ft_close_poll_fds(struct pollfd *fds, int len)
 {
 	int i;
