@@ -102,5 +102,14 @@ The repository includes:
 
 If you are using this as an exam-style reference, the main focus is not feature completeness but control over the server loop, client lifecycle, and clean shutdown behavior.
 
+## Scope and Limitations
+
+**Small message delivery only:** This server is designed to handle small, discrete messages suitable for chat-like communication. Each client has fixed-size output and input buffers (4096 bytes). Large messages or high-throughput scenarios may exceed buffer capacity or cause message loss.
+
+## Open Issues & TODOs
+
+- **Buffer overflow handling:** Currently, if a client broadcasts a message larger than the remaining output buffer space of another client, the message may be silently dropped or truncated.
+  - *Proposed solution:* Integrate a proper input buffer queue for each client, or return a warning message to the sender if their message cannot be queued due to insufficient output buffer space on any recipient.
+
 ## About AI usage
 AI (Copilot) was used to create a testscript (100%) and served as assictance to create this README-file.
